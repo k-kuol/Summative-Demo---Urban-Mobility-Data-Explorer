@@ -27,8 +27,7 @@ import struct
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SHP_PATH = ROOT / "data" / "raw" / "taxi_zones" / "taxi_zones.shp"
-DBF_PATH = ROOT / "data" / "raw" / "taxi_zones" / "taxi_zones.dbf"
+ZONES_DIR = ROOT / "data" / "raw" / "taxi_zones"
 OUT_PATH = ROOT / "data" / "processed" / "taxi_zones.geojson"
 
 COORD_DECIMALS = 5  # 5 decimal places of a degree is about 1 metre: plenty for a city map
@@ -201,9 +200,23 @@ def rings_to_geometry(rings):
 # ---------------------------------------------------------------------------
 # 4. Put it together
 # ---------------------------------------------------------------------------
+def find_shapefile():
+    """
+    Locate taxi_zones.shp. Some copies of taxi_zones.zip hold the files
+    directly; the one on the TLC website wraps them in a taxi_zones/ folder,
+    so unzipping into data/raw/taxi_zones/ can nest them one level deeper.
+    """
+    for path in (ZONES_DIR / "taxi_zones.shp", ZONES_DIR / "taxi_zones" / "taxi_zones.shp"):
+        if path.exists() and path.with_suffix(".dbf").exists():
+            return path
+    raise SystemExit(f"taxi_zones.shp (with its .dbf) not found in {ZONES_DIR.relative_to(ROOT)}/ "
+                     "Extract taxi_zones.zip there (see README section 2).")
+
+
 def main():
-    records = read_dbf(DBF_PATH)
-    shapes = read_shp(SHP_PATH)
+    shp_path = find_shapefile()
+    records = read_dbf(shp_path.with_suffix(".dbf"))
+    shapes = read_shp(shp_path)
     if len(records) != len(shapes):
         raise ValueError(f"{len(records)} attribute rows but {len(shapes)} shapes")
 

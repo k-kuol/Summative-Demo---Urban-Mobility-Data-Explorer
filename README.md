@@ -89,8 +89,8 @@ airport filters). Ranking and medians are computed by the hand-written code in
 Requires **Python 3.10 or newer** (tested on 3.14 with pandas 3.0).
 
 ```bash
-git clone https://github.com/apiel-max/MyTaxiApp.git
-cd MyTaxiApp
+git clone https://github.com/k-kuol/Summative-Demo---Urban-Mobility-Data-Explorer.git
+cd Summative-Demo---Urban-Mobility-Data-Explorer
 python -m venv venv
 ```
 
@@ -132,9 +132,10 @@ data/raw/
     └── taxi_zones.prj
 ```
 
-> **Note on `taxi_zones.zip`:** the zip contains the shapefile parts directly,
-> with no folder inside. Create `data/raw/taxi_zones/` first and extract the
-> zip **into** it, otherwise `convert_zones.py` will not find `taxi_zones.shp`.
+> **Note on `taxi_zones.zip`:** extract it into `data/raw/taxi_zones/`.
+> Depending on where you downloaded it, the zip either holds the shapefile
+> parts directly or wraps them in its own `taxi_zones/` folder; both layouts
+> work, because `convert_zones.py` looks in either place.
 >
 > ```bash
 > mkdir -p data/raw/taxi_zones
@@ -334,7 +335,7 @@ The full database is ~2.8 GB, too large for free hosting, so the repo ships a
 dashboard shows a "Demo build" notice when it runs on a sample, because ride
 counts shrink with the sample while averages, speeds and patterns do not.
 
-1. Push the repo to GitHub.
+1. Push the repo to GitHub (https://github.com/k-kuol/Summative-Demo---Urban-Mobility-Data-Explorer).
 2. On [render.com](https://render.com), choose **New → Blueprint** and select
    the repo. Render reads `render.yaml` and creates the web service.
 3. Wait for the build, then open the URL Render gives you.

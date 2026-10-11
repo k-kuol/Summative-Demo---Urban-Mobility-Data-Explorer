@@ -15,6 +15,12 @@ CREATE INDEX IF NOT EXISTS idx_trips_is_airport        ON trips (is_airport_trip
 CREATE INDEX IF NOT EXISTS idx_trips_fare              ON trips (fare_amount);
 CREATE INDEX IF NOT EXISTS idx_trips_distance          ON trips (trip_distance);
 
+-- Every column the trip table can be sorted by needs an index; without one,
+-- "ORDER BY ... LIMIT 25" sorts all 7.6M rows (~30 s per click instead of ~0.2 s).
+CREATE INDEX IF NOT EXISTS idx_trips_duration          ON trips (trip_duration_min);
+CREATE INDEX IF NOT EXISTS idx_trips_speed             ON trips (avg_speed_mph);
+CREATE INDEX IF NOT EXISTS idx_trips_tip_pct           ON trips (tip_pct);
+
 -- Composite: the most common dashboard query pattern
 CREATE INDEX IF NOT EXISTS idx_trips_zone_hour
     ON trips (pickup_zone_id, pickup_hour, pickup_dow);

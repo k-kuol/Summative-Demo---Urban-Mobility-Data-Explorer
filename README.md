@@ -167,7 +167,7 @@ python pipeline/clean_data.py
 python pipeline/convert_zones.py
 
 # Step 4: build the SQLite database
-python database/load_database.py           # full dataset (~2–5 min, ~2.7 GB)
+python database/load_database.py           # full dataset (~5–8 min, ~2.8 GB)
 # OR for a quick demo:
 python database/load_database.py --sample 0.1   # 10% sample, much faster
 ```
@@ -329,7 +329,7 @@ python backend/app.py
 
 ## Deployment (Render, free tier)
 
-The full database is ~2.5 GB, too large for free hosting, so the repo ships a
+The full database is ~2.8 GB, too large for free hosting, so the repo ships a
 **1% random-sample demo database** at `deploy/mobility_demo.db` (~45 MB). The
 dashboard shows a "Demo build" notice when it runs on a sample, because ride
 counts shrink with the sample while averages, speeds and patterns do not.

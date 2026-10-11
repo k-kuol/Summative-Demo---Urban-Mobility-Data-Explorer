@@ -59,10 +59,19 @@ AGG_FROM_SUMMARY = """
     SUM(sum_tip_pct) AS tip_sum, SUM(tip_pct_trips) AS tip_n
 """
 
-SORTABLE_TRIP_COLUMNS = {
-    "pickup_datetime", "trip_distance", "fare_amount",
-    "trip_duration_min", "avg_speed_mph", "tip_pct",
+# Sortable trip columns -> the index that already stores the rows in that order
+# (see database/indexes.sql).
+SORT_INDEXES = {
+    "pickup_datetime": "idx_trips_pickup_datetime",
+    "trip_distance": "idx_trips_distance",
+    "fare_amount": "idx_trips_fare",
+    "trip_duration_min": "idx_trips_duration",
+    "avg_speed_mph": "idx_trips_speed",
+    "tip_pct": "idx_trips_tip_pct",
 }
+SORTABLE_TRIP_COLUMNS = set(SORT_INDEXES)
+NULLABLE_SORTS = {"tip_pct"}      # NULL for cash rides, where tips are never recorded
+BROAD_FILTER_ROWS = 50_000
 UNKNOWN_ZONES = {264, 265}
 DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
@@ -372,19 +381,37 @@ def trips():
     per_page = int_arg(request.args, "per_page", 1, 100, default=25)
 
     where, params = where_clause(f, prefix="t.")
+    if sort in NULLABLE_SORTS:
+        # Sorting by tip % lists the rides that have one (card rides). Excluding
+        # NULLs, rather than ORDER BY ... NULLS LAST, lets the index do the sorting.
+        where += (" AND " if where else "WHERE ") + f"t.{sort} IS NOT NULL"
+
+    # Query planning. SQLite has two ways to answer "first 25 rides matching X,
+    # sorted by Y": walk X's index and sort every match, or walk Y's index in
+    # order and keep the first 25 that match X. The first is fast when X is
+    # selective (one small zone); the second when X matches many rides
+    # (all of Manhattan): sorting 6.8M matches took ~30 s. SQLite cannot tell
+    # the cases apart, so count matches, stopping at BROAD_FILTER_ROWS, and
+    # force Y's index when the filter is broad.
+    hint = ""
+    broad = query_one(f"SELECT COUNT(*) AS n FROM (SELECT 1 FROM trips t {where} LIMIT ?)",
+                      params + [BROAD_FILTER_ROWS])["n"] >= BROAD_FILTER_ROWS
+    if broad:
+        hint = f"INDEXED BY {SORT_INDEXES[sort]}"
+
+    order_by = f"ORDER BY t.{sort} {order}, t.trip_id"
+    # Pick the page of trips first, then look up names for just those rows.
     rows = query(f"""
         SELECT t.trip_id, t.pickup_datetime, t.dropoff_datetime,
                pz.zone_name AS pickup_zone, dz.zone_name AS dropoff_zone,
                t.trip_distance, t.trip_duration_min, t.avg_speed_mph,
                t.fare_amount, t.tip_amount, t.tip_pct, t.total_amount,
                p.description AS payment_type, t.passenger_count
-        FROM trips t
+        FROM (SELECT * FROM trips t {hint} {where} {order_by} LIMIT ? OFFSET ?) t
         JOIN zones pz ON pz.zone_id = t.pickup_zone_id
         JOIN zones dz ON dz.zone_id = t.dropoff_zone_id
         JOIN payment_types p ON p.payment_type_id = t.payment_type_id
-        {where}
-        ORDER BY t.{sort} {order} NULLS LAST, t.trip_id
-        LIMIT ? OFFSET ?""", params + [per_page, (page - 1) * per_page])
+        {order_by}""", params + [per_page, (page - 1) * per_page])
     return jsonify({"page": page, "per_page": per_page, "sort": sort, "order": order.lower(),
                     "trips": rows})
 

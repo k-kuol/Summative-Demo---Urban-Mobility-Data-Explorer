@@ -43,6 +43,7 @@ VENDORS = [
     (1, "Creative Mobile Technologies"),
     (2, "VeriFone Inc."),
     (4, "Undocumented vendor (not in 2019 data dictionary)"),
+    (5, "Undocumented vendor (not in 2019 data dictionary; TLC parquet only)"),
 ]
 RATE_CODES = [
     (1, "Standard rate"), (2, "JFK"), (3, "Newark"),
@@ -60,8 +61,10 @@ EXCLUSION_REASONS = {
     "zero_distance": "Zero miles travelled (cancelled ride or GPS failure)",
     "distance_over_100mi": "More than 100 miles (odometer/GPS error)",
     "fare_zero_or_negative": "Fare of $0 or less (refund, correction or void)",
+    "fare_below_base_fare": "Fare under the $2.50 base fare (placeholder price, e.g. $0.01)",
     "fare_over_500": "Fare above $500 (data-entry error)",
     "negative_charge_component": "A negative tax, tip, toll or total",
+    "total_zero": "Total of $0 despite a positive fare (total never recorded)",
     "speed_over_80mph": "Implied average speed above 80 mph (physically impossible)",
 }
 

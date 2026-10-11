@@ -95,8 +95,14 @@ def apply_exclusion_rules(df):
         ("zero_distance", df["trip_distance"] <= 0),
         (f"distance_over_{MAX_DISTANCE_MI}mi", df["trip_distance"] > MAX_DISTANCE_MI),
         ("fare_zero_or_negative", df["fare_amount"] <= 0),
+        # Below the $2.50 flag-drop no metered ride is possible. 98% of these are
+        # negotiated / no-charge placeholders, e.g. $0.01 for a 33-mile ride.
+        ("fare_below_base_fare", df["fare_amount"] < NYC_BASE_FARE),
         (f"fare_over_{MAX_FARE}", df["fare_amount"] > MAX_FARE),
         ("negative_charge_component", negative_component),
+        # Fare, tax and tip present but a $0 total: the total was never recorded
+        # (13 rides, all vendor 5 / payment type 0, in the TLC parquet release).
+        ("total_zero", df["total_amount"] == 0),
         (f"speed_over_{MAX_SPEED_MPH}mph", speed > MAX_SPEED_MPH),
     ]
 
@@ -128,12 +134,24 @@ def repair_and_normalize(df, lookup):
     note(zero_pax, "passenger_count_0_set_unknown")
     df["passenger_count"] = df["passenger_count"].astype("Int64").mask(zero_pax)
 
+    # The TLC parquet release (not the course CSV) has ~28.7k rides whose
+    # passenger count, rate code and store-and-forward flag are all blank and
+    # whose payment type is 0, a code not in the 2019 dictionary. Their trip,
+    # zone and fare fields look normal, so keep them with the blanks as unknown.
+    no_meta = df["RatecodeID"].isna()
+    note(no_meta, "trip_metadata_missing")
+
     # Rate code 99 is not in the TLC data dictionary.
-    bad_rate = ~df["RatecodeID"].isin(VALID_RATECODES)
+    bad_rate = df["RatecodeID"].notna() & ~df["RatecodeID"].isin(VALID_RATECODES)
     note(bad_rate, "invalid_ratecode_set_unknown")
     df["RatecodeID"] = df["RatecodeID"].astype("Int64").mask(bad_rate)
 
-    # Vendor 4 is not in the 2019 dictionary but its rides look normal: keep, flag.
+    # Payment type 0 is undocumented for 2019: record it as 5 ("Unknown").
+    bad_payment = ~df["payment_type"].isin(VALID_PAYMENT_TYPES)
+    note(bad_payment, "invalid_payment_type_set_unknown")
+    df["payment_type"] = df["payment_type"].mask(bad_payment, 5).astype("int64")
+
+    # Vendors 4 and 5 are not in the 2019 dictionary but their rides look normal: keep, flag.
     note(~df["VendorID"].isin([1, 2]), "undocumented_vendor_id")
 
     # Rides whose total does not equal the sum of its parts: keep, flag.
@@ -154,7 +172,8 @@ def repair_and_normalize(df, lookup):
     for col in MONEY_COLS:
         df[col] = df[col].round(2)
     df["trip_distance"] = df["trip_distance"].round(2)
-    df["store_and_fwd_flag"] = (df["store_and_fwd_flag"] == "Y").astype("int8")
+    # Blank flag (parquet rows with missing metadata) counts as "N": not stored-and-forwarded.
+    df["store_and_fwd_flag"] = df["store_and_fwd_flag"].eq("Y").fillna(False).astype("int8")
     df = df.rename(columns={
         "VendorID": "vendor_id",
         "tpep_pickup_datetime": "pickup_datetime",

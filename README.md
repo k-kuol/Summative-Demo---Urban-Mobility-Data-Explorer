@@ -169,7 +169,7 @@ python pipeline/convert_zones.py
 
 # Step 4: build the SQLite database
 python database/load_database.py           # full dataset (~5–8 min, ~2.8 GB)
-# OR for a quick demo:
+# OR, for a faster build on a smaller machine:
 python database/load_database.py --sample 0.1   # 10% sample, much faster
 ```
 
@@ -309,7 +309,7 @@ python backend/algorithms.py
 
 ---
 
-## Running on a sample (for demos or low-memory machines)
+## Running on a sample (for quick runs or low-memory machines)
 
 ```bash
 # 1. Make a 5% sample
@@ -331,9 +331,9 @@ python backend/app.py
 ## Deployment (Render, free tier)
 
 The full database is ~2.8 GB, too large for free hosting, so the repo ships a
-**1% random-sample demo database** at `deploy/mobility_demo.db` (~45 MB). The
-dashboard shows a "Demo build" notice when it runs on a sample, because ride
-counts shrink with the sample while averages, speeds and patterns do not.
+**1% random-sample database** at `deploy/mobility_sample.db` (~45 MB). The
+dashboard shows a notice when it runs on a sample, because ride counts shrink
+with the sample while averages, speeds and patterns do not.
 
 1. Push the repo to GitHub (https://github.com/k-kuol/Summative-Demo---Urban-Mobility-Data-Explorer).
 2. On [render.com](https://render.com), choose **New → Blueprint** and select
@@ -343,10 +343,10 @@ counts shrink with the sample while averages, speeds and patterns do not.
 The server only needs Flask (plus gunicorn on Render); pandas is used by the
 offline pipeline, not at runtime.
 
-To rebuild the demo database after changing the pipeline:
+To rebuild the sample database after changing the pipeline:
 
 ```bash
-python database/load_database.py --sample 0.01 --out deploy/mobility_demo.db
+python database/load_database.py --sample 0.01 --out deploy/mobility_sample.db
 ```
 
-**Live demo:** <!-- ADD YOUR RENDER URL HERE after deploying -->
+**Live site:** <!-- ADD YOUR RENDER URL HERE after deploying -->

@@ -483,12 +483,12 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(() => { drawHourly(); drawDaily(); }, 150);
 });
 
-/* A deployed demo runs on a random sample; say so, since counts shrink with it. */
+/* A hosted copy may run on a random sample; say so, since counts shrink with it. */
 function showSampleNote(fraction) {
   if (!(fraction < 1)) return;
   const pct = `${+(fraction * 100).toFixed(2)}%`;
   $(".masthead-text").insertAdjacentHTML("beforeend",
-    `<p class="sample-note">Demo build: a random ${esc(pct)} sample of the rides. Ride counts are
+    `<p class="sample-note">Showing a random ${esc(pct)} sample of the rides. Ride counts are
       about ${esc(pct)} of the real totals; averages, speeds and patterns are unaffected.</p>`);
 }
 

@@ -11,8 +11,8 @@ Step 3 of the pipeline: build the SQLite database from the cleaned data.
 
 Usage (from the project root, after clean_data.py and convert_zones.py):
     python database/load_database.py               # all 7.5M trips (~2.7 GB, a few minutes)
-    python database/load_database.py --sample 0.1  # random 10% (fast, for laptops / demos)
-    python database/load_database.py --sample 0.01 --out deploy/mobility_demo.db   # deploy demo
+    python database/load_database.py --sample 0.1  # random 10% (fast, for laptops)
+    python database/load_database.py --sample 0.01 --out deploy/mobility_sample.db   # hosted copy
 
 Output:
     data/mobility.db
@@ -242,7 +242,7 @@ def main():
     print("Verifying ...")
     verify(con, n_trips)
     if args.sample < 1:
-        con.execute("VACUUM")   # compact the small demo/deploy copy before it is shared
+        con.execute("VACUUM")   # compact the small sample copy before it is shared
     con.close()
     print(f"\nDone in {time.time() - start:.0f}s -> {db_path} "
           f"({db_path.stat().st_size / 1e9:.2f} GB)")

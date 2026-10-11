@@ -765,7 +765,7 @@ every yellow taxi ride in New York City in January 2019 — over 7.5 million
 trips — filtered by borough, time of day, fare range, and more.
 The whole dashboard updates instantly when you change a filter."
 
-**0:30–2:00 — Live demo**
+**0:30–2:00 — Live walkthrough**
 - Change the borough filter to "Manhattan". Point out the map updating.
 - Change the hour filter to 7am–9am. Show the speed chart dropping.
 - Click on a zone on the map (e.g. Upper East Side). Show the side panel

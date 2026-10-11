@@ -9,11 +9,21 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    /* Apply a saved light/dark choice before first paint (see js/theme.js). */
+    try {
+      const saved = localStorage.getItem("theme");
+      if (saved === "light" || saved === "dark") document.documentElement.dataset.theme = saved;
+    } catch (e) { /* storage blocked: follow the system theme */ }
+  </script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to the dashboard</a>
 
   <header class="masthead">
+    <button type="button" class="btn-ghost theme-toggle" id="theme-toggle" aria-pressed="false">
+      <span class="theme-icon" aria-hidden="true">☾</span> <span class="theme-label">Dark</span>
+    </button>
     <div class="masthead-text">
       <h1>How New York moves by yellow cab</h1>
       <p class="lede">Every yellow taxi ride in January 2019, cleaned, mapped, timed and priced.

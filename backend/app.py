@@ -22,6 +22,7 @@ Example: /api/summary?borough_id=4&hour_min=7&hour_max=9
 import json
 import mimetypes
 import os
+import sqlite3
 import time
 from datetime import date, timedelta
 from pathlib import Path
@@ -30,7 +31,7 @@ from flask import Flask, g, jsonify, request, send_from_directory
 
 from algorithms import count_by, quickselect_median, top_k
 from db import (ROUTE_STATS_FILTERS, ZONE_STATS_FILTERS, BadRequest, can_use, close_db,
-                get_db, parse_filters, query, query_one, where_clause)
+                get_db, int_arg, parse_filters, query, query_one, where_clause)
 
 # Some Windows machines map .js to "text/plain" in the registry, which makes
 # browsers refuse to run the dashboard's JavaScript modules. Set it explicitly.
@@ -128,6 +129,15 @@ def weekday_counts(filters):
     return counts
 
 
+def sample_fraction():
+    """1.0 for the full dataset; less when load_database.py was run with --sample."""
+    try:
+        row = query_one("SELECT value FROM dataset_info WHERE key = 'trip_sample_fraction'")
+    except sqlite3.OperationalError:   # database built before dataset_info existed
+        return 1.0
+    return float(row["value"]) if row else 1.0
+
+
 @app.before_request
 def _start_timer():
     g.t0 = time.perf_counter()
@@ -165,6 +175,7 @@ def meta():
     first, last = dataset_date_range()
     return jsonify({
         "date_range": {"first": first.isoformat(), "last": last.isoformat()},
+        "sample_fraction": sample_fraction(),
         "boroughs": query("SELECT borough_id, name FROM boroughs ORDER BY name"),
         "zones": query("""SELECT z.zone_id, z.zone_name, b.name AS borough, z.borough_id, z.is_airport
                           FROM zones z JOIN boroughs b USING (borough_id) ORDER BY z.zone_name"""),
@@ -265,7 +276,7 @@ def top_routes():
     (O(n log k)) instead of ORDER BY / sorted().
     """
     f = parse_filters(request.args)
-    k = min(max(int(request.args.get("k", 10)), 1), 50)
+    k = int_arg(request.args, "k", 1, 50, default=10)
     if can_use(f, ROUTE_STATS_FILTERS):
         where, params = where_clause(f, date_col="pickup_date")
         table, cols = "route_date_stats", ("SUM(trip_count)", "SUM(sum_distance)",
@@ -357,8 +368,8 @@ def trips():
     if sort not in SORTABLE_TRIP_COLUMNS:
         raise BadRequest(f"'sort' must be one of {', '.join(sorted(SORTABLE_TRIP_COLUMNS))}")
     order = "DESC" if request.args.get("order", "asc").lower() == "desc" else "ASC"
-    page = max(int(request.args.get("page", 1)), 1)
-    per_page = min(max(int(request.args.get("per_page", 25)), 1), 100)
+    page = int_arg(request.args, "page", 1, 1_000_000, default=1)
+    per_page = int_arg(request.args, "per_page", 1, 100, default=25)
 
     where, params = where_clause(f, prefix="t.")
     rows = query(f"""

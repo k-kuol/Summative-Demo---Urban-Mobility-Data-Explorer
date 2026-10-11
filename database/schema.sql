@@ -17,6 +17,7 @@
 
 PRAGMA foreign_keys = ON;
 
+DROP TABLE IF EXISTS dataset_info;
 DROP TABLE IF EXISTS zone_date_hour_stats;
 DROP TABLE IF EXISTS route_date_stats;
 DROP TABLE IF EXISTS excluded_records;
@@ -159,4 +160,13 @@ CREATE TABLE route_date_stats (
     sum_duration_min REAL    NOT NULL,
     sum_fare         REAL    NOT NULL,
     PRIMARY KEY (pickup_date, pickup_zone_id, dropoff_zone_id)
+);
+
+-- ---------------------------------------------------------------------
+-- How this database was built (e.g. the trip sample fraction), so the
+-- API and dashboard can tell users when they are looking at a sample.
+-- ---------------------------------------------------------------------
+CREATE TABLE dataset_info (
+    key    TEXT PRIMARY KEY,
+    value  TEXT NOT NULL
 );

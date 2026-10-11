@@ -8,7 +8,8 @@ physically impossible. The numbers it prints are the evidence behind every
 cleaning rule in clean_data.py, and they go straight into the report.
 
 Usage (from the project root):
-    python pipeline/profile_data.py
+    python pipeline/profile_data.py                       # default raw file
+    python pipeline/profile_data.py --input path/to/file  # .parquet or .csv
 Output:
     printed to the screen and saved to docs/data_profile.txt
 """
@@ -18,8 +19,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from trips_io import input_path, read_trips
+
 ROOT = Path(__file__).resolve().parent.parent
-RAW_CSV = ROOT / "data" / "raw" / "yellow_tripdata_2019-01.csv"
 LOOKUP_CSV = ROOT / "data" / "raw" / "taxi_zone_lookup.csv"
 OUT_TXT = ROOT / "docs" / "data_profile.txt"
 
@@ -39,9 +41,9 @@ def pct(n, total):
 
 
 def main():
-    say(f"Loading {RAW_CSV.name} ...")
-    df = pd.read_csv(RAW_CSV, parse_dates=["tpep_pickup_datetime", "tpep_dropoff_datetime"],
-                     low_memory=False)
+    raw_path = input_path("Report missing, duplicate and impossible values in the raw trips.")
+    say(f"Loading {raw_path.name} ...")
+    df = read_trips(raw_path)
     n = len(df)
     say(f"Rows: {n:,}   Columns: {df.shape[1]}")
     say()

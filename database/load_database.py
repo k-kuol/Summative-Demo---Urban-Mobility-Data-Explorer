@@ -12,6 +12,7 @@ Step 3 of the pipeline: build the SQLite database from the cleaned data.
 Usage (from the project root, after clean_data.py and convert_zones.py):
     python database/load_database.py               # all 7.5M trips (~2.7 GB, a few minutes)
     python database/load_database.py --sample 0.1  # random 10% (fast, for laptops / demos)
+    python database/load_database.py --sample 0.01 --out deploy/mobility_demo.db   # deploy demo
 
 Output:
     data/mobility.db
@@ -52,6 +53,7 @@ PAYMENT_TYPES = [
     (4, "Dispute"), (5, "Unknown"), (6, "Voided trip"),
 ]
 EXCLUSION_REASONS = {
+    "duplicate_record": "Exact copy of an earlier ride (every raw field identical)",
     "pickup_outside_jan_2019": "Pickup timestamp outside the dataset month (meter clock error)",
     "dropoff_not_after_pickup": "Dropoff at or before pickup (zero or negative duration)",
     "duration_over_6h": "Trip longer than 6 hours (meter left running)",
@@ -187,6 +189,8 @@ def main():
     parser = argparse.ArgumentParser(description="Build data/mobility.db")
     parser.add_argument("--sample", type=float, default=1.0,
                         help="fraction of trips to load, e.g. 0.1 for 10%% (default: all)")
+    parser.add_argument("--out", type=Path, default=DB_PATH,
+                        help="where to write the database (default: data/mobility.db)")
     args = parser.parse_args()
     if not 0 < args.sample <= 1:
         parser.error("--sample must be between 0 and 1")
@@ -196,9 +200,11 @@ def main():
             raise SystemExit(f"Missing {path.relative_to(ROOT)}. Run the pipeline scripts first "
                              "(see README).")
 
+    db_path = args.out if args.out.is_absolute() else ROOT / args.out
+    db_path.parent.mkdir(parents=True, exist_ok=True)
     start = time.time()
-    DB_PATH.unlink(missing_ok=True)
-    con = sqlite3.connect(DB_PATH)
+    db_path.unlink(missing_ok=True)
+    con = sqlite3.connect(db_path)
     # Bulk-load settings: safe here because the whole file is rebuilt from scratch.
     con.execute("PRAGMA journal_mode = OFF")
     con.execute("PRAGMA synchronous = OFF")
@@ -210,6 +216,7 @@ def main():
 
     print("Loading dimension tables ...")
     load_dimensions(con)
+    con.execute("INSERT INTO dataset_info VALUES ('trip_sample_fraction', ?)", (str(args.sample),))
     con.commit()
 
     print(f"Loading trips{'' if args.sample == 1 else f' ({args.sample:.0%} sample)'} ...")
@@ -231,9 +238,11 @@ def main():
 
     print("Verifying ...")
     verify(con, n_trips)
+    if args.sample < 1:
+        con.execute("VACUUM")   # compact the small demo/deploy copy before it is shared
     con.close()
-    print(f"\nDone in {time.time() - start:.0f}s -> {DB_PATH.relative_to(ROOT)} "
-          f"({DB_PATH.stat().st_size / 1e9:.2f} GB)")
+    print(f"\nDone in {time.time() - start:.0f}s -> {db_path} "
+          f"({db_path.stat().st_size / 1e9:.2f} GB)")
 
 
 if __name__ == "__main__":

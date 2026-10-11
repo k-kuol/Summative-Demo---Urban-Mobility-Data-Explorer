@@ -17,7 +17,10 @@ from pathlib import Path
 from flask import g
 
 ROOT = Path(__file__).resolve().parent.parent
-DB_PATH = Path(os.environ.get("MOBILITY_DB", ROOT / "data" / "mobility.db")).resolve()
+# A relative MOBILITY_DB is taken from the project root, not the current
+# directory, so it works however the server is launched (e.g. gunicorn --chdir).
+_db_env = Path(os.environ.get("MOBILITY_DB", "data/mobility.db"))
+DB_PATH = (_db_env if _db_env.is_absolute() else ROOT / _db_env).resolve()
 
 
 class BadRequest(ValueError):
@@ -54,10 +57,15 @@ def query_one(sql, params=()):
 # ---------------------------------------------------------------------------
 # Filters
 # ---------------------------------------------------------------------------
-def _int(args, name, lo, hi):
+def int_arg(args, name, lo, hi, default):
+    """A whole-number URL parameter in [lo, hi]; bad input raises BadRequest (HTTP 400)."""
+    return _int(args, name, lo, hi, default)
+
+
+def _int(args, name, lo, hi, default=None):
     raw = args.get(name)
     if raw in (None, ""):
-        return None
+        return default
     try:
         value = int(raw)
     except ValueError:

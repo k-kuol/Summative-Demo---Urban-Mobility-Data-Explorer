@@ -1,0 +1,60 @@
+Loading yellow_tripdata_2019-01.csv ...
+Rows: 7,667,792   Columns: 18
+
+=== MISSING VALUES ===
+  congestion_surcharge     4,855,978  (63.33%)
+
+=== DUPLICATES ===
+  exact duplicate rows               0  ( 0.00%)
+
+=== TIMESTAMPS ===
+  pickup range: 2001-02-02 14:55:07  ->  2088-01-24 00:25:39
+  pickup outside Jan 2019          537  ( 0.01%)
+  dropoff before pickup              4  ( 0.00%)
+  zero duration                  6,290  ( 0.08%)
+  duration < 1 min              67,775  ( 0.88%)
+  duration > 3 hours            20,913  ( 0.27%)
+  duration > 24 hours                5  ( 0.00%)
+  duration quantiles (min): p1=1.0, p50=10.2, p99=53.1, p99.9=1424.7
+
+=== DISTANCE (miles) ===
+  zero distance                 54,770  ( 0.71%)
+  negative distance                  0  ( 0.00%)
+  > 100 miles                       32  ( 0.00%)
+  max distance              831.8
+  quantiles: p1=0.10, p50=1.53, p99=18.90, p99.9=26.30
+
+=== IMPLIED SPEED (mph) ===
+  speed > 60 mph                 6,743  ( 0.09%)
+  speed > 100 mph                5,713  ( 0.07%)
+  median speed              10.1 mph
+
+=== MONEY ($) ===
+  fare_amount          negative      7,131  ( 0.09%)   zero     2,426   max 623,259.86
+  tip_amount           negative        105  ( 0.00%)   zero 2,410,295   max     787.25
+  tolls_amount         negative        110  ( 0.00%)   zero 7,275,166   max   3,288.00
+  total_amount         negative      7,131  ( 0.09%)   zero     1,414   max 623,261.66
+  extra                negative      3,150  ( 0.04%)   zero 4,199,855   max     535.38
+  mta_tax              negative      6,819  ( 0.09%)   zero    34,984   max      60.80
+  fare > $500                       34  ( 0.00%)
+  total != sum of parts         15,950  ( 0.21%)
+
+=== CATEGORICAL CODES ===
+  VendorID: 1=2,938,778, 2=4,652,191, 4=76,823
+  passenger_count: 0=117,381, 1=5,456,121, 2=1,114,106, 3=314,721, 4=140,753, 5=323,842, 6=200,811, 7=19, 8=29, 9=9
+  RatecodeID: 1=7,430,139, 2=166,090, 3=11,801, 4=4,895, 5=54,569, 6=46, 99=252
+  payment_type: 1=5,486,027, 2=2,137,415, 3=33,186, 4=11,164
+  store_and_fwd_flag: N=7,630,142, Y=37,650
+  (valid per TLC dictionary: RatecodeID 1-6, payment_type 1-6, VendorID 1-2)
+
+=== LOCATIONS ===
+  PULocationID: not in lookup          0  ( 0.00%)   unknown (264/265)    163,631  ( 2.13%)
+  DOLocationID: not in lookup          0  ( 0.00%)   unknown (264/265)    165,911  ( 2.16%)
+  same pickup & dropoff zone   605,625  ( 7.90%)
+
+=== TIPS BY PAYMENT TYPE ===
+  (1=credit card, 2=cash, 3=no charge, 4=dispute)
+  type 1: trips=5,486,027  avg tip=$ 2.55  tipped= 95.8%
+  type 2: trips=2,137,415  avg tip=$ 0.00  tipped=  0.0%
+  type 3: trips=   33,186  avg tip=$-0.00  tipped=  0.1%
+  type 4: trips=   11,164  avg tip=$ 0.00  tipped=  0.2%

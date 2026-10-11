@@ -9,6 +9,7 @@
 import { ApiError, esc, fmt, get } from "./api.js";
 import { BLUE_RAMP, ORANGE_RAMP, barChart, heatmap, hbars, lineChart, rampLegend } from "./charts.js";
 import { createZoneMap } from "./map.js";
+import { initThemeToggle } from "./theme.js";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const HOLIDAYS = { "2019-01-01": "New Year", "2019-01-21": "MLK Day" };
@@ -482,11 +483,22 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(() => { drawHourly(); drawDaily(); }, 150);
 });
 
+/* A deployed demo runs on a random sample; say so, since counts shrink with it. */
+function showSampleNote(fraction) {
+  if (!(fraction < 1)) return;
+  const pct = `${+(fraction * 100).toFixed(2)}%`;
+  $(".masthead-text").insertAdjacentHTML("beforeend",
+    `<p class="sample-note">Demo build: a random ${esc(pct)} sample of the rides. Ride counts are
+      about ${esc(pct)} of the real totals; averages, speeds and patterns are unaffected.</p>`);
+}
+
 async function init() {
+  initThemeToggle($("#theme-toggle"));
   try {
     const [{ data: meta }, { data: geo }] = await Promise.all([get("meta"), get("zones/geojson")]);
     state.meta = meta;
     populateFilters(meta);
+    showSampleNote(meta.sample_fraction);
     state.map = createZoneMap($("#map"), $("#map-legend"), geo, { onSelect: selectZone });
   } catch (err) {
     $("#main").insertAdjacentHTML("afterbegin",

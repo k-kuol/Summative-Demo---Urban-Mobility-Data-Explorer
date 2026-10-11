@@ -103,6 +103,7 @@ button, input, select { font: inherit; color: inherit; }
    Masthead + meter
    -------------------------------------------------------------------------- */
 .masthead {
+  position: relative;
   max-width: 1320px;
   margin: 0 auto;
   padding: clamp(24px, 4vw, 48px) 16px 20px;
@@ -162,6 +163,14 @@ button, input, select { font: inherit; color: inherit; }
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+.sample-note {
+  margin-top: 12px;
+  max-width: 52ch;
+  padding: 8px 12px;
+  border-left: 3px solid var(--taxi);
+  font-size: 0.85rem;
+  color: var(--ink-2);
+}
 .meter-foot { margin-top: 10px; font-size: 0.75rem; color: var(--meter-dim); }
 .is-loading .meter-value { opacity: 0.45; }
 
@@ -219,6 +228,19 @@ select { padding-right: 6px; }
   cursor: pointer;
 }
 .btn-ghost:hover { background: var(--surface); }
+
+.theme-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.theme-icon { font-size: 1rem; line-height: 1; }
 .btn-ghost:disabled { opacity: 0.4; cursor: default; }
 .btn-ghost[aria-expanded="true"] { background: var(--surface); border-color: var(--ink-2); }
 
@@ -468,4 +490,35 @@ figcaption { font-size: 0.85rem; color: var(--ink-2); margin-bottom: 6px; }
   max-width: 260px;
   font-variant-numeric: tabular-nums;
 }
-.tooltip strong { display:
+.tooltip strong { display: block; margin-bottom: 4px; }
+.tt-row { display: flex; justify-content: space-between; gap: 14px; }
+.tt-row span { color: var(--muted); }
+.tt-row b { font-weight: 600; }
+
+.site-footer {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   Small screens: stack every two-column layout into one column and drop the
+   fixed widths, so nothing is wider than the phone (no sideways scroll).
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .masthead { grid-template-columns: minmax(0, 1fr); padding-top: 64px; }
+  .meter { min-width: 0; }
+  .meter-grid { grid-template-columns: repeat(2, auto); }
+
+  .filters { position: static; }          /* a tall sticky bar would cover the phone screen */
+  .field-wide { flex: 1 1 100%; min-width: 0; }      /* long zone names must not widen the page */
+  .field-wide select { min-width: 0; width: 100%; max-width: 100%; }
+  .filter-actions { margin-left: 0; }
+
+  .map-layout, .twin-charts, .quality-layout { grid-template-columns: minmax(0, 1fr); }
+  .map { height: 360px; }
+
+  .heatmap { grid-template-columns: 30px repeat(24, minmax(0, 1fr)); gap: 1px; font-size: 9px; }
+}

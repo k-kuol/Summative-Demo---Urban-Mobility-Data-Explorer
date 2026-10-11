@@ -14,7 +14,8 @@ What it does, in order:
   6. Saves the clean trips plus both logs and a summary.
 
 Usage (from the project root):
-    python pipeline/clean_data.py
+    python pipeline/clean_data.py                       # data/raw/yellow_tripdata_2019-01.parquet or .csv
+    python pipeline/clean_data.py --input path/to/file  # e.g. a sample made by make_sample.py
 
 Outputs (in data/processed/):
     trips_clean.csv          the clean, enriched rides
@@ -30,8 +31,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from trips_io import input_path, read_trips
+
 ROOT = Path(__file__).resolve().parent.parent
-RAW_CSV = ROOT / "data" / "raw" / "yellow_tripdata_2019-01.csv"
 LOOKUP_CSV = ROOT / "data" / "raw" / "taxi_zone_lookup.csv"
 OUT_DIR = ROOT / "data" / "processed"
 
@@ -56,14 +58,9 @@ MONEY_COLS = ["fare_amount", "extra", "mta_tax", "tip_amount", "tolls_amount",
               "improvement_surcharge", "congestion_surcharge", "total_amount"]
 
 
-def load_raw():
-    print(f"Loading {RAW_CSV.name} ...")
-    df = pd.read_csv(
-        RAW_CSV,
-        parse_dates=["tpep_pickup_datetime", "tpep_dropoff_datetime"],
-        dtype={"store_and_fwd_flag": "string"},
-        low_memory=False,
-    )
+def load_raw(path):
+    print(f"Loading {path.name} ...")
+    df = read_trips(path)
     # Keep the original line position so any removed ride can be traced back
     # to the raw file (row 1 = first ride after the header).
     df.insert(0, "source_row", np.arange(1, len(df) + 1))
@@ -84,7 +81,13 @@ def apply_exclusion_rules(df):
     negative_component = (df[["extra", "mta_tax", "tip_amount", "tolls_amount",
                               "improvement_surcharge", "total_amount"]] < 0).any(axis=1)
 
+    # A duplicate is a ride whose every raw field matches an earlier ride.
+    # source_row is unique by construction, so it must be left out of the
+    # comparison. keep="first" keeps the original and drops only the copies.
+    duplicate = df.drop(columns="source_row").duplicated(keep="first")
+
     rules = [
+        ("duplicate_record", duplicate),
         ("pickup_outside_jan_2019",
          (df["tpep_pickup_datetime"] < MONTH_START) | (df["tpep_pickup_datetime"] >= MONTH_END)),
         ("dropoff_not_after_pickup", duration_min <= 0),
@@ -211,10 +214,11 @@ def add_features(df):
 
 
 def main():
+    raw_path = input_path("Clean, normalize and enrich the raw yellow taxi trips.")
     start = time.time()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    raw = load_raw()
+    raw = load_raw(raw_path)
     lookup = pd.read_csv(LOOKUP_CSV)
     total = len(raw)
 
@@ -240,7 +244,7 @@ def main():
     suspicious.to_csv(OUT_DIR / "suspicious_records.csv", index=False, date_format=ts_format)
 
     summary = {
-        "source_file": RAW_CSV.name,
+        "source_file": raw_path.name,
         "raw_rows": total,
         "clean_rows": len(kept),
         "excluded_rows": len(excluded),
